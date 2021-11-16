@@ -80,8 +80,16 @@ export default function CovidChart({title, data, showKey, size}) {
         </svg>
       </div>
       {showKey ?
-      <div className="chart-info"></div>
+      <div className="chart-info">
+
+      </div>
       : null}
     </div>
   )
+}
+
+function LegendItem(props) {
+  <div className="legend-item">
+    <div className=""></div>
+  </div>
 }
