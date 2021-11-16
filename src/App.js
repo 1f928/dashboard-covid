@@ -1,15 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { curveCatmullRom, curveLinear } from '@visx/curve';
-import { LinePath, AreaClosed } from '@visx/shape';
 
 import CovidChart from './CovidChart';
 
 import './App.css';
-
-const mockData = [
-  [0,100],[100,40],[200,50],[300,20]
-];
 
 function App() {
   const [data, setData] = useState({});
@@ -30,13 +24,13 @@ function App() {
         title="Missouri"
         data={data.states ? data.states[0].rows : []}
         showKey={true}
-        size={200}
+        size={500}
       />
       <CovidChart
         title="USA"
         data={data.countries ? data.countries[0].rows : []}
         showKey={false}
-        size={500}
+        size={400}
       />
     </div>
   );

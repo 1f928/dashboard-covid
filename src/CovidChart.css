@@ -42,4 +42,23 @@
 .chart-info {
   flex-basis: 20%;
   min-height: 20%;
+
+  display: flex;
+}
+
+/* ----------------- */
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  font-size: .5em;
+  margin: 1em;
+}
+
+.legend-key {
+  height: 1.5em;
+  width: 1.5em;
+  border: 1px solid black;
+  border-radius: 1em;
+  margin-right: .5em;
 }
