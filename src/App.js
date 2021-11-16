@@ -1,17 +1,24 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { curveCatmullRom, curveLinear } from '@visx/curve';
+import { LinePath, AreaClosed } from '@visx/shape';
+
+import CovidChart from './CovidChart';
 
 import './App.css';
 
+const mockData = [
+  [0,100],[100,40],[200,50],[300,20]
+];
+
 function App() {
-  const [data, setData] = useState();
+  const [data, setData] = useState({});
   useEffect(() => {
-    const covidData = axios.get('https://api.bh.dev/covid')
+    axios.get('https://api.bh.dev/covid')
       .then((response) => {
         if (response && response.data) {
-          console.log(data);
           setData(response.data);
-        } else throw('Received no data from API.');
+        } else Promise.reject('Received no data from API.');
       }).catch((err) => {
         console.log(err);
       });
@@ -19,25 +26,18 @@ function App() {
 
   return (
     <div className="App">
-      <DataSection title="United States" data={data ? data.countryData : {}} />
-      <DataSection title="Missouri" data={data ? data.stateData : {}} />
-      <DataSection title="St. Louis Area" data={data ? data.countyData : {}} />
-    </div>
-  );
-}
-
-function DataSection({title, data}) {
-
-  return (
-    <div className="dataSection">
-      <h2>{title}</h2>
-      <div className="data">
-        {
-          data ?
-          data.length
-          : null
-        }
-      </div>
+      <CovidChart
+        title="Missouri"
+        data={data.states ? data.states[0].rows : []}
+        showKey={true}
+        size={200}
+      />
+      <CovidChart
+        title="USA"
+        data={data.countries ? data.countries[0].rows : []}
+        showKey={false}
+        size={500}
+      />
     </div>
   );
 }
