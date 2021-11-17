@@ -44,21 +44,29 @@
   min-height: 20%;
 
   display: flex;
+
+  padding: 0 1.5em 0 1.5em;
 }
 
 /* ----------------- */
 
 .legend-item {
   display: flex;
+  flex-direction: column;
+  justify-content: center;
   align-items: center;
   font-size: .5em;
-  margin: 1em;
+  margin: .5em;
 }
 
 .legend-key {
-  height: 1.5em;
-  width: 1.5em;
+  height: 1.25em;
+  width: 1.25em;
   border: 1px solid black;
   border-radius: 1em;
-  margin-right: .5em;
+  margin-bottom: .25em;
+}
+
+.legend-value {
+  text-align: center;
 }

@@ -10,6 +10,11 @@ const partVaccColor = "";
 const fullVaccColor = "";
 const dateLineColor = "#eee";
 
+const bisectData = (arr, n) => {
+  if (n > 1) n = 1;
+  return arr[Math.floor(arr.length * n)];
+};
+
 export default function CovidChart({title, data, showKey, size}) {
   const [fontSize, setFontSize] = useState();
   useEffect(() => {
@@ -18,21 +23,26 @@ export default function CovidChart({title, data, showKey, size}) {
 
   const [showTooltip, setShowTooltip] = useState(false);
   const [tooltipX, setTooltipX] = useState(null);
+  const [tooltipData, setTooltipData] = useState(null);
 
-  const handleTooltip = (event) => {
-    if (!showTooltip) setShowTooltip(true);
+  const handleTooltip = useCallback((event) => {
+    const pageX = (event.type === "touchmove" || event.type === "touchstart") ?
+      event.touches[0].pageX : event.pageX;
     const { left } = event.target.getBoundingClientRect();
-    const { pageX } = event
-    const x = (pageX - left) / size;
-    setTooltipX(x);
-  };
-  console.log(tooltipX);
+    if (pageX > left + 10) { // couldn't find out what was causing the strange behavior, so killing it here
+      const x = (pageX - left) / size;
+      
+      if (!showTooltip) setShowTooltip(true);
+      setTooltipX(x);
+      setTooltipData(bisectData(data, x));
+    }
+  });
 
-  const removeTooltip = () => {
+  const removeTooltip = useCallback(() => {
     setTooltipX(null);
+    setTooltipData(null);
     setShowTooltip(false);
-  };
-  console.log(showTooltip);
+  });
 
   const [maxCases, setMaxCases] = useState();
   const [maxDeaths, setMaxDeaths] = useState();
@@ -49,7 +59,7 @@ export default function CovidChart({title, data, showKey, size}) {
   const scaleCases = (val) => minCaseValue + ((val / maxCases) * caseDif);
 
   const minDeathValue = 0.475;
-  const deathDif = caseDif * 0.15;
+  const deathDif = caseDif * 0.13;
   const scaleDeaths = (val) => minDeathValue + ((val / maxDeaths) * deathDif);
 
   const scaleVacc = (val) => null;
@@ -132,6 +142,22 @@ export default function CovidChart({title, data, showKey, size}) {
               stroke={dateLineColor}
               strokeWidth="0.005"
             />
+            <circle
+              cx={tooltipX}
+              cy={scaleCases(tooltipData.cases_avg)}
+              r={0.01}
+              fill="white"
+              stroke={caseColor}
+              strokeWidth="0.005"
+            />
+            <circle
+              cx={tooltipX}
+              cy={scaleDeaths(tooltipData.deaths_avg)}
+              r={0.01}
+              fill="white"
+              stroke={deathColor}
+              strokeWidth="0.005"
+            />
           </g>
           : null}
 
@@ -141,6 +167,8 @@ export default function CovidChart({title, data, showKey, size}) {
       <div className="chart-info">
         <LegendItem color={caseColor} value="Average Cases" />
         <LegendItem color={deathColor} value="Average Deaths" />
+        <LegendItem color={partVaccColor} value="Partially Vaccinated" />
+        <LegendItem color={fullVaccColor} value="Fully Vaccinated" />
       </div>
       : null}
     </div>
@@ -167,3 +195,6 @@ function LegendItem({color, value}) {
     </div>
   );
 }
+
+// TODO: Actually fix offset bad values
+// TODO: Pick a consistent font
