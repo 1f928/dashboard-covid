@@ -24,7 +24,7 @@ function App() {
         title="Missouri"
         data={data.states ? data.states[0].rows : []}
         showKey={true}
-        size={500}
+        size={600}
       />
       <CovidChart
         title="USA"

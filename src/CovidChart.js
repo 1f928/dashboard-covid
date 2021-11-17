@@ -162,6 +162,29 @@ export default function CovidChart({title, data, showKey, size}) {
           : null}
 
         </svg>
+        {showTooltip ?
+        <>
+        <div
+          className="tooltip info"
+          style={{
+            top: `calc(-2em + ${.5 * (size * (showKey ? .8 : 1))}px)`,
+            left: `calc(1.5em + ${tooltipX * size}px)`
+          }}
+        >
+          <p>current cases and percent of max</p>
+          <p>running total death %</p>
+        </div>
+        <div
+          className="tooltip date"
+          style={{
+            top: `calc(.2em + ${1 * (size * (showKey ? .8 : 1))}px)`,
+            left: `calc(-2em + ${tooltipX * size}px)`
+          }}
+        >
+          {tooltipData.date}
+        </div>
+        </>
+        : null}
       </div>
       {showKey ?
       <div className="chart-info">
