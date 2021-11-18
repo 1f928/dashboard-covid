@@ -15,6 +15,26 @@ const bisectData = (arr, n) => {
   return arr[Math.floor(arr.length * n)];
 };
 
+const formatDate = (date) => {
+  const months = [
+    "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dec"
+  ]
+
+  const dateNums = date.split('-');
+  return `${months[parseInt(dateNums[1]) - 1]} ${dateNums[2]}, '${dateNums[0].slice(2)}`
+}
+
 export default function CovidChart({title, data, showKey, size}) {
   const [fontSize, setFontSize] = useState();
   useEffect(() => {
@@ -29,13 +49,12 @@ export default function CovidChart({title, data, showKey, size}) {
     const pageX = (event.type === "touchmove" || event.type === "touchstart") ?
       event.touches[0].pageX : event.pageX;
     const { left } = event.target.getBoundingClientRect();
-    if (pageX > left + 10) { // couldn't find out what was causing the strange behavior, so killing it here
-      const x = (pageX - left) / size;
-      
-      if (!showTooltip) setShowTooltip(true);
-      setTooltipX(x);
-      setTooltipData(bisectData(data, x));
-    }
+    
+    const x = (pageX - left) / size;
+    
+    if (!showTooltip) setShowTooltip(true);
+    setTooltipX(x);
+    setTooltipData(bisectData(data, x));
   });
 
   const removeTooltip = useCallback(() => {
@@ -80,10 +99,6 @@ export default function CovidChart({title, data, showKey, size}) {
           height="100%"
           viewBox="0 0 1 1"
           preserveAspectRatio="none"
-          onTouchStart={handleTooltip}
-          onTouchMove={handleTooltip}
-          onMouseMove={handleTooltip}
-          onMouseLeave={() => removeTooltip()}
         >
 
           {/* Date Lines */}
@@ -161,6 +176,17 @@ export default function CovidChart({title, data, showKey, size}) {
           </g>
           : null}
 
+
+          {/* For some reason, having this on SVG leads to occlusion issues */}
+          <rect
+            onTouchStart={handleTooltip}
+            onTouchMove={handleTooltip}
+            onMouseMove={handleTooltip}
+            onMouseLeave={() => removeTooltip()}
+            width={1}
+            height={1}
+            fillOpacity={0}
+          />
         </svg>
         {showTooltip ?
         <>
@@ -171,8 +197,21 @@ export default function CovidChart({title, data, showKey, size}) {
             left: `calc(1.5em + ${tooltipX * size}px)`
           }}
         >
-          <p>current cases and percent of max</p>
-          <p>running total death %</p>
+          <p>{formatDate(tooltipData.date)}:</p>
+          <div className="tooltip-row">
+            <div className="tooltip-key" style={{backgroundColor: caseColor}} />
+            <div>
+              <p>active: {tooltipData.cases_avg}</p>
+              <p>pmax: {(tooltipData.cases_avg * 100 / maxCases).toFixed(2)}%</p>
+            </div>
+          </div>
+          <div className="tooltip-row">
+            <div className="tooltip-key" style={{backgroundColor: deathColor}} />
+            <div>
+              <p>percent: 1.62%</p>
+              <p>pmax: 28.16%</p>
+            </div>
+          </div>
         </div>
         <div
           className="tooltip date"
@@ -181,7 +220,7 @@ export default function CovidChart({title, data, showKey, size}) {
             left: `calc(-2em + ${tooltipX * size}px)`
           }}
         >
-          {tooltipData.date}
+          {formatDate(tooltipData.date)}
         </div>
         </>
         : null}
@@ -219,5 +258,5 @@ function LegendItem({color, value}) {
   );
 }
 
-// TODO: Actually fix offset bad values
+// TODO: Set viewbox to 1 1 || 1 0.8 and adjust scaleY accordingly
 // TODO: Pick a consistent font

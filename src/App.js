@@ -32,6 +32,15 @@ function App() {
         showKey={false}
         size={400}
       />
+      {data.counties.map((county) =>
+      <CovidChart
+        title={county.keys.county}
+        data={county.rows}
+        showKey={false}
+        size={300}
+      />
+      )}
+
     </div>
   );
 }
