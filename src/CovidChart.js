@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { curveCatmullRom, curveLinear } from '@visx/curve';
+import { curveLinear } from '@visx/curve';
 import { LinePath, Line } from '@visx/shape';
 
 import './CovidChart.css';
@@ -55,21 +55,21 @@ export default function CovidChart({title, data, showKey, size}) {
     if (!showTooltip) setShowTooltip(true);
     setTooltipX(x);
     setTooltipData(bisectData(data, x));
-  });
+  }, [data, size, showTooltip]);
 
   const removeTooltip = useCallback(() => {
     setTooltipX(null);
     setTooltipData(null);
     setShowTooltip(false);
-  });
+  }, []);
 
   const [maxCases, setMaxCases] = useState();
   const [maxDeaths, setMaxDeaths] = useState();
   const [maxDeathPct, setMaxDeathPct] = useState();
   useEffect(() => {
-    setMaxCases(Math.max(...data.filter((d) => d.active_est !== NaN && d.active_est).map((d) => d.active_est)));
-    setMaxDeaths(Math.max(...data.filter((d) => d.deaths_avg !== NaN && d.deaths_avg).map((d) => d.deaths_avg)));
-    setMaxDeathPct(Math.max(...data.filter((d) => d.deaths !== NaN).map((d) => d.deaths / d.cases)));
+    setMaxCases(Math.max(...data.filter((d) => !isNaN(d.active_est) && d.active_est).map((d) => d.active_est)));
+    setMaxDeaths(Math.max(...data.filter((d) => !isNaN(d.deaths_avg) && d.deaths_avg).map((d) => d.deaths_avg)));
+    setMaxDeathPct(Math.max(...data.filter((d) => !isNaN(d.deaths)).map((d) => d.deaths / d.cases)));
   }, [data])
 
   const scaleX = (val) => val / data.length;
