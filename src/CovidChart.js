@@ -6,8 +6,8 @@ import './CovidChart.css';
 
 const caseColor = "#fce2a2";
 const deathColor = "#df6771";
-const partVaccColor = "";
-const fullVaccColor = "";
+const partVaccColor = "lightgreen";
+const fullVaccColor = "green";
 const dateLineColor = "#eee";
 
 const bisectData = (arr, n) => {
@@ -65,9 +65,11 @@ export default function CovidChart({title, data, showKey, size}) {
 
   const [maxCases, setMaxCases] = useState();
   const [maxDeaths, setMaxDeaths] = useState();
+  const [maxDeathPct, setMaxDeathPct] = useState();
   useEffect(() => {
-    setMaxCases(Math.max(...data.map((d) => d.cases_avg)));
-    setMaxDeaths(Math.max(...data.map((d) => d.deaths_avg)));
+    setMaxCases(Math.max(...data.filter((d) => d.active_est !== NaN && d.active_est).map((d) => d.active_est)));
+    setMaxDeaths(Math.max(...data.filter((d) => d.deaths_avg !== NaN && d.deaths_avg).map((d) => d.deaths_avg)));
+    setMaxDeathPct(Math.max(...data.filter((d) => d.deaths !== NaN).map((d) => d.deaths / d.cases)));
   }, [data])
 
   const scaleX = (val) => val / data.length;
@@ -81,7 +83,10 @@ export default function CovidChart({title, data, showKey, size}) {
   const deathDif = caseDif * 0.13;
   const scaleDeaths = (val) => minDeathValue + ((val / maxDeaths) * deathDif);
 
-  const scaleVacc = (val) => null;
+  const maxVaccValue = 0.55;
+  const minVaccValue = 0.95;
+  const vaccDif = maxVaccValue - minVaccValue;
+  const scaleVacc = (val) => minVaccValue + (val * 0.01 * vaccDif);
 
   const dateLines = data.map((d, i) => ({date: d.date, index: i}))
     .filter((d) => d.date.split('-').pop() === "01")
@@ -110,43 +115,43 @@ export default function CovidChart({title, data, showKey, size}) {
           <g>
             {/* Average Deaths Curve */}
             <LinePath
-              curve={curveCatmullRom}
+              curve={curveLinear}
               data={data}
               x={(d, i) => scaleX(i)}
               y={(d) => scaleDeaths(d.deaths_avg)}
               stroke={deathColor}
-              strokeWidth="0.005"
+              strokeWidth={0.005}
             />
 
             {/* Average Cases Curve */}
             <LinePath
-              curve={curveCatmullRom}
+              curve={curveLinear}
               data={data}
               x={(d, i) => scaleX(i)}
-              y={(d) => scaleCases(d.cases_avg)}
+              y={(d) => scaleCases(d.active_est)}
               stroke={caseColor}
-              strokeWidth="0.005"
+              strokeWidth={0.005}
             />
 
             {/* Fully Vaccinated Curve */}
-            {/* <LinePath
-              curve={}
-              data={}
-              x={}
-              y={}
-              stroke={}
-              strokeWidth={}
-            /> */}
+            <LinePath
+              curve={curveLinear}
+              data={data}
+              x={(d, i) => scaleX(i)}
+              y={(d) => scaleVacc(d.pvacc_pct)}
+              stroke={partVaccColor}
+              strokeWidth={0.005}
+            />
             
             {/* Partially Vaccinated Curve */}
-            {/* <LinePath
-              curve={}
-              data={}
-              x={}
-              y={}
-              stroke={}
-              strokeWidth={}
-            /> */}
+            <LinePath
+              curve={curveLinear}curveLinear
+              data={data}
+              x={(d, i) => scaleX(i)}
+              y={(d) => scaleVacc(d.fvacc_pct)}
+              stroke={fullVaccColor}
+              strokeWidth={0.005}
+            />
           </g>
 
           {showTooltip ?
@@ -159,7 +164,7 @@ export default function CovidChart({title, data, showKey, size}) {
             />
             <circle
               cx={tooltipX}
-              cy={scaleCases(tooltipData.cases_avg)}
+              cy={scaleCases(tooltipData.active_est) || 2}
               r={0.01}
               fill="white"
               stroke={caseColor}
@@ -167,10 +172,26 @@ export default function CovidChart({title, data, showKey, size}) {
             />
             <circle
               cx={tooltipX}
-              cy={scaleDeaths(tooltipData.deaths_avg)}
+              cy={scaleDeaths(tooltipData.deaths_avg) || 2}
               r={0.01}
               fill="white"
               stroke={deathColor}
+              strokeWidth="0.005"
+            />
+            <circle
+              cx={tooltipX}
+              cy={scaleVacc(tooltipData.pvacc_pct)}
+              r={0.01}
+              fill="white"
+              stroke={partVaccColor}
+              strokeWidth="0.005"
+            />
+            <circle
+              cx={tooltipX}
+              cy={scaleVacc(tooltipData.fvacc_pct)}
+              r={0.01}
+              fill="white"
+              stroke={fullVaccColor}
               strokeWidth="0.005"
             />
           </g>
@@ -193,7 +214,7 @@ export default function CovidChart({title, data, showKey, size}) {
         <div
           className="tooltip info"
           style={{
-            top: `calc(-2em + ${.5 * (size * (showKey ? .8 : 1))}px)`,
+            top: `calc(-4em + ${.5 * (size * (showKey ? .8 : 1))}px)`,
             left: `calc(1.5em + ${tooltipX * size}px)`
           }}
         >
@@ -201,15 +222,27 @@ export default function CovidChart({title, data, showKey, size}) {
           <div className="tooltip-row">
             <div className="tooltip-key" style={{backgroundColor: caseColor}} />
             <div>
-              <p>active: {tooltipData.cases_avg}</p>
-              <p>pmax: {(tooltipData.cases_avg * 100 / maxCases).toFixed(2)}%</p>
+              <p>active: {tooltipData.active_est}</p>
+              <p>pmax: {(tooltipData.active_est * 100 / maxCases).toFixed(2)}%</p>
             </div>
           </div>
           <div className="tooltip-row">
             <div className="tooltip-key" style={{backgroundColor: deathColor}} />
             <div>
-              <p>percent: 1.62%</p>
-              <p>pmax: 28.16%</p>
+              <p>death rate: {(tooltipData.deaths * 100 / tooltipData.cases).toFixed(2)}%</p>
+              <p>pmax: {((tooltipData.deaths * 100 / tooltipData.cases) / maxDeathPct).toFixed(2)}%</p>
+            </div>
+          </div>
+          <div className="tooltip-row">
+            <div className="tooltip-key" style={{backgroundColor: partVaccColor}} />
+            <div>
+              <p>percent: {(tooltipData.pvacc_pct).toFixed(2)}%</p>
+            </div>
+          </div>
+          <div className="tooltip-row">
+            <div className="tooltip-key" style={{backgroundColor: fullVaccColor}} />
+            <div>
+              <p>percent: {(tooltipData.fvacc_pct).toFixed(2)}%</p>
             </div>
           </div>
         </div>
@@ -260,3 +293,5 @@ function LegendItem({color, value}) {
 
 // TODO: Set viewbox to 1 1 || 1 0.8 and adjust scaleY accordingly
 // TODO: Pick a consistent font
+// TODO: Set boundaries for tooltip
+// TODO: Add lines for covid %s (50%, 80%, 100%)(?)

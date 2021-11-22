@@ -1,0 +1,41 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  # test:
+  #   name: Run Tests
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #   - uses: actions/checkout@v2
+  #   - uses: actions/setup-node@v2
+  #     with:
+  #       node-version: 15
+  #   - run: npm ci
+  #   - run: npm run test
+
+  push_build:
+    name: Push build directory to S3-compliant storage service
+    runs-on: ubuntu-latest
+    # needs: [test]
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-node@v2
+      with:
+        node-version: 15
+    - run: npm ci
+    - run: npm run build
+    - uses: BetaHuhn/do-spaces-action@13515d126a67967c7f9d171670a8fc54a58d2cd2
+      with:
+        access_key: ${{ secrets.DO_ACCESS_KEY }}
+        secret_key: ${{ secrets.DO_SECRET_KEY }}
+        space_region: ${{ secrets.DO_REGION_NAME }}
+        space_name: ${{ secrets.DO_SPACE_NAME }}
+        source: build
+        out_dir: dc19
+        versioning: true
+      
