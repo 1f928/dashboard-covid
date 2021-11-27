@@ -8,8 +8,8 @@ import './App.css';
 function App() {
   const [data, setData] = useState({});
   useEffect(() => {
-    // axios.get('https://api.bh.dev/covid')
-    axios.get('http://localhost:3100')
+    axios.get('https://api.bh.dev/covid')
+    // axios.get('http://localhost:3100')
       .then((response) => {
         if (response && response.data) {
           setData(response.data);
