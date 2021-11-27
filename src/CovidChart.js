@@ -72,21 +72,21 @@ export default function CovidChart({title, data, showKey, size}) {
     setMaxDeathPct(Math.max(...data.filter((d) => !isNaN(d.deaths)).map((d) => d.deaths / d.cases)));
   }, [data])
 
-  const scaleX = (val) => val / data.length;
+  const scaleX = (val) => val ? val / data.length : 0;
 
   const maxCaseValue = 0.05;
   const minCaseValue = 0.475;
   const caseDif = maxCaseValue - minCaseValue;
-  const scaleCases = (val) => minCaseValue + ((val / maxCases) * caseDif);
+  const scaleCases = (val) => isNaN(val) ? minCaseValue : minCaseValue + ((val / maxCases) * caseDif);
 
-  const minDeathValue = 0.475;
+  const minDeathValue = minCaseValue;
   const deathDif = caseDif * 0.13;
-  const scaleDeaths = (val) => minDeathValue + ((val / maxDeaths) * deathDif);
+  const scaleDeaths = (val) => isNaN(val) ? minDeathValue : minDeathValue + ((val / maxDeaths) * deathDif);
 
   const maxVaccValue = 0.55;
   const minVaccValue = 0.95;
   const vaccDif = maxVaccValue - minVaccValue;
-  const scaleVacc = (val) => minVaccValue + (val * 0.01 * vaccDif);
+  const scaleVacc = (val) => isNaN(val) ? minVaccValue : minVaccValue + (val * 0.01 * vaccDif);
 
   const dateLines = data.map((d, i) => ({date: d.date, index: i}))
     .filter((d) => d.date.split('-').pop() === "01")
@@ -117,8 +117,8 @@ export default function CovidChart({title, data, showKey, size}) {
             <LinePath
               curve={curveLinear}
               data={data}
-              x={(d, i) => scaleX(i)}
-              y={(d) => scaleDeaths(d.deaths_avg)}
+              x={(_, i) => scaleX(i)}
+              y={(d) => scaleDeaths(d.deaths_avg) || 0}
               stroke={deathColor}
               strokeWidth={0.005}
             />
@@ -127,8 +127,8 @@ export default function CovidChart({title, data, showKey, size}) {
             <LinePath
               curve={curveLinear}
               data={data}
-              x={(d, i) => scaleX(i)}
-              y={(d) => scaleCases(d.active_est)}
+              x={(_, i) => scaleX(i)}
+              y={(d) => scaleCases(d.active_est) || 0}
               stroke={caseColor}
               strokeWidth={0.005}
             />
@@ -137,7 +137,7 @@ export default function CovidChart({title, data, showKey, size}) {
             <LinePath
               curve={curveLinear}
               data={data}
-              x={(d, i) => scaleX(i)}
+              x={(_, i) => scaleX(i)}
               y={(d) => scaleVacc(d.pvacc_pct)}
               stroke={partVaccColor}
               strokeWidth={0.005}
@@ -145,9 +145,9 @@ export default function CovidChart({title, data, showKey, size}) {
             
             {/* Partially Vaccinated Curve */}
             <LinePath
-              curve={curveLinear}curveLinear
+              curve={curveLinear}
               data={data}
-              x={(d, i) => scaleX(i)}
+              x={(_, i) => scaleX(i)}
               y={(d) => scaleVacc(d.fvacc_pct)}
               stroke={fullVaccColor}
               strokeWidth={0.005}
@@ -236,13 +236,13 @@ export default function CovidChart({title, data, showKey, size}) {
           <div className="tooltip-row">
             <div className="tooltip-key" style={{backgroundColor: partVaccColor}} />
             <div>
-              <p>percent: {(tooltipData.pvacc_pct).toFixed(2)}%</p>
+              <p>percent: {(tooltipData.pvacc_pct || 0).toFixed(2)}%</p>
             </div>
           </div>
           <div className="tooltip-row">
             <div className="tooltip-key" style={{backgroundColor: fullVaccColor}} />
             <div>
-              <p>percent: {(tooltipData.fvacc_pct).toFixed(2)}%</p>
+              <p>percent: {(tooltipData.fvacc_pct || 0).toFixed(2)}%</p>
             </div>
           </div>
         </div>
