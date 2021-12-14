@@ -15,7 +15,7 @@
     "web-vitals": "^1.1.2"
   },
   "scripts": {
-    "start": "react-scripts start",
+    "start": "react-scripts --openssl-legacy-provider start",
     "build": "react-scripts build",
     "test": "exit 0",
     "eject": "react-scripts eject"
@@ -38,5 +38,5 @@
       "last 1 safari version"
     ]
   },
-  "homepage": "."
+  "homepage": "/lab/stl-c19"
 }

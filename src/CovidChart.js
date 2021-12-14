@@ -1,6 +1,8 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { curveLinear } from '@visx/curve';
 import { LinePath, Line } from '@visx/shape';
+
+import useComponentSize from './util/useComponentSize';
 
 import './CovidChart.css';
 
@@ -35,27 +37,31 @@ const formatDate = (date) => {
   return `${months[parseInt(dateNums[1]) - 1]} ${dateNums[2]}, '${dateNums[0].slice(2)}`
 }
 
-export default function CovidChart({title, data, showKey, size}) {
-  const [fontSize, setFontSize] = useState();
-  useEffect(() => {
-    setFontSize(`${size / 250}em`)
-  }, [size]);
+export default function CovidChart({title, data, showKey}) {
+  const ref = useRef();
 
+  const [width, height] = useComponentSize(ref);
   const [showTooltip, setShowTooltip] = useState(false);
   const [tooltipX, setTooltipX] = useState(null);
   const [tooltipData, setTooltipData] = useState(null);
+  const [yMultiplier, setYMultiplier] = useState(1);
+
+  // Effect: Updates Y-scale multiplier
+  useEffect(() => {
+    setYMultiplier(showKey ? 0.8 : 1);
+  }, [showKey]);
 
   const handleTooltip = useCallback((event) => {
     const pageX = (event.type === "touchmove" || event.type === "touchstart") ?
       event.touches[0].pageX : event.pageX;
-    const { left } = event.target.getBoundingClientRect();
+    const { left, width } = event.target.getBoundingClientRect();
     
-    const x = (pageX - left) / size;
+    const x = (pageX - left) / width;
     
     if (!showTooltip) setShowTooltip(true);
     setTooltipX(x);
     setTooltipData(bisectData(data, x));
-  }, [data, size, showTooltip]);
+  }, [data, showTooltip]);
 
   const removeTooltip = useCallback(() => {
     setTooltipX(null);
@@ -74,8 +80,8 @@ export default function CovidChart({title, data, showKey, size}) {
 
   const scaleX = (val) => val ? val / data.length : 0;
 
-  const maxCaseValue = 0.05;
-  const minCaseValue = 0.475;
+  const maxCaseValue = 0.05 * yMultiplier;
+  const minCaseValue = 0.475 * yMultiplier;
   const caseDif = maxCaseValue - minCaseValue;
   const scaleCases = (val) => isNaN(val) ? minCaseValue : minCaseValue + ((val / maxCases) * caseDif);
 
@@ -83,8 +89,8 @@ export default function CovidChart({title, data, showKey, size}) {
   const deathDif = caseDif * 0.13;
   const scaleDeaths = (val) => isNaN(val) ? minDeathValue : minDeathValue + ((val / maxDeaths) * deathDif);
 
-  const maxVaccValue = 0.55;
-  const minVaccValue = 0.95;
+  const maxVaccValue = 0.55 * yMultiplier;
+  const minVaccValue = 0.95 * yMultiplier;
   const vaccDif = maxVaccValue - minVaccValue;
   const scaleVacc = (val) => isNaN(val) ? minVaccValue : minVaccValue + (val * 0.01 * vaccDif);
 
@@ -94,15 +100,15 @@ export default function CovidChart({title, data, showKey, size}) {
     .filter((d, i) => i % 3 === 0);
 
   return (
-    <div style={{width: size, height: size, fontSize: fontSize}} className="covid-chart">
+    <div className="covid-chart" ref={ref} style={{ fontSize: `${width / 300}em` }}>
       <div className="chart-title">
-        <h2>{title}</h2>
+        <h2>{title} {width} {height}</h2>
       </div>
       <div className={`chart-body ${!showKey ? "full" : ""}`}>
         <svg
           width="100%"
           height="100%"
-          viewBox="0 0 1 1"
+          viewBox={`0 0 1 ${yMultiplier}`}
           preserveAspectRatio="none"
         >
 
@@ -209,13 +215,13 @@ export default function CovidChart({title, data, showKey, size}) {
             fillOpacity={0}
           />
         </svg>
-        {showTooltip ?
+        {showTooltip && tooltipData ?
         <>
         <div
           className="tooltip info"
           style={{
-            top: `calc(-4em + ${.5 * (size * (showKey ? .8 : 1))}px)`,
-            left: `calc(1.5em + ${tooltipX * size}px)`
+            top: `calc(${40 * yMultiplier}%)`,
+            left: `calc(${tooltipX * 98}% + 2em)`
           }}
         >
           <p>{formatDate(tooltipData.date)}:</p>
@@ -249,8 +255,8 @@ export default function CovidChart({title, data, showKey, size}) {
         <div
           className="tooltip date"
           style={{
-            top: `calc(.2em + ${1 * (size * (showKey ? .8 : 1))}px)`,
-            left: `calc(-2em + ${tooltipX * size}px)`
+            top: `calc(${95 * yMultiplier}%)`,
+            left: `calc(${tooltipX * 96}% - 2em)`
           }}
         >
           {formatDate(tooltipData.date)}
@@ -277,7 +283,7 @@ function DateLine({at}) {
       to={{ x: at, y: 1 }}
       stroke={dateLineColor}
       strokeWidth="0.002"
-      strokeDasharray=".015,.01"
+      strokeDasharray=".015, .01"
     />
   );
 }
@@ -291,7 +297,6 @@ function LegendItem({color, value}) {
   );
 }
 
-// TODO: Set viewbox to 1 1 || 1 0.8 and adjust scaleY accordingly
 // TODO: Pick a consistent font
 // TODO: Set boundaries for tooltip
-// TODO: Add lines for covid %s (50%, 80%, 100%)(?)
+// TODO: Add lines for vacc %s (50%, 80%, 100%)(?)
