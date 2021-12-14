@@ -102,7 +102,7 @@ export default function CovidChart({title, data, showKey}) {
   return (
     <div className="covid-chart" ref={ref} style={{ fontSize: `${width / 300}em` }}>
       <div className="chart-title">
-        <h2>{title} {width} {height}</h2>
+        <h2>{title}</h2>
       </div>
       <div className={`chart-body ${!showKey ? "full" : ""}`}>
         <svg
