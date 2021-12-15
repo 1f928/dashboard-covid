@@ -13,8 +13,9 @@ const fullVaccColor = "green";
 const dateLineColor = "#eee";
 
 const bisectData = (arr, n) => {
+  if (n < 0) n = 0;
   if (n > 1) n = 1;
-  return arr[Math.floor(arr.length * n)];
+  return arr[Math.floor((arr.length - 1) * n)];
 };
 
 const formatDate = (date) => {
@@ -61,7 +62,7 @@ export default function CovidChart({title, data, showKey}) {
     
     let x = (pageX - left) / width;
     if (x < 0) x = 0;
-    if (x > 1) x = 1;
+    if (x > 1) x = 1; 
     
     setShowTooltip(true);
     setTooltipX(x);
