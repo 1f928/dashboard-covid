@@ -13,5 +13,5 @@ export default function useComponentSize(ref) {
     return () => window.removeEventListener('resize', handleResize);
   }, [ref]);
 
-  return size;
+  return {width: size[0], height: size[1]};
 };

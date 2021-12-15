@@ -38,12 +38,8 @@ const formatDate = (date) => {
 }
 
 export default function CovidChart({title, data, showKey}) {
-  const ref = useRef();
-
-  const [width, height] = useComponentSize(ref);
-  const [showTooltip, setShowTooltip] = useState(false);
-  const [tooltipX, setTooltipX] = useState(null);
-  const [tooltipData, setTooltipData] = useState(null);
+  const chartRef = useRef();
+  const {width} = useComponentSize(chartRef);
   const [yMultiplier, setYMultiplier] = useState(1);
 
   // Effect: Updates Y-scale multiplier
@@ -51,22 +47,47 @@ export default function CovidChart({title, data, showKey}) {
     setYMultiplier(showKey ? 0.8 : 1);
   }, [showKey]);
 
+  const tooltipRef = useRef();
+  const [showTooltip, setShowTooltip] = useState(false);
+  const [tooltipX, setTooltipX] = useState(null);
+  const [tooltipData, setTooltipData] = useState(null);
+  const [flipTooltip, setFlipTooltip] = useState(false);
+  const [tooltipWidth, setTooltipWidth] = useState(null);
+
   const handleTooltip = useCallback((event) => {
     const pageX = (event.type === "touchmove" || event.type === "touchstart") ?
       event.touches[0].pageX : event.pageX;
     const { left, width } = event.target.getBoundingClientRect();
     
-    const x = (pageX - left) / width;
+    let x = (pageX - left) / width;
+    if (x < 0) x = 0;
+    if (x > 1) x = 1;
     
-    if (!showTooltip) setShowTooltip(true);
+    setShowTooltip(true);
     setTooltipX(x);
     setTooltipData(bisectData(data, x));
-  }, [data, showTooltip]);
+
+    if (tooltipRef.current) {
+      const {
+        width: ttWidth
+      } = tooltipRef.current.getBoundingClientRect();
+
+      setTooltipWidth(ttWidth)
+
+      if (pageX + ttWidth > left + width) {
+        setFlipTooltip(true);
+      } else {
+        setFlipTooltip(false);
+      }
+    }
+  }, [data]);
 
   const removeTooltip = useCallback(() => {
     setTooltipX(null);
     setTooltipData(null);
     setShowTooltip(false);
+    setFlipTooltip(false);
+    setTooltipWidth(null);
   }, []);
 
   const [maxCases, setMaxCases] = useState();
@@ -100,7 +121,14 @@ export default function CovidChart({title, data, showKey}) {
     .filter((d, i) => i % 3 === 0);
 
   return (
-    <div className="covid-chart" ref={ref} style={{ fontSize: `${width / 300}em` }}>
+    <div
+      className="covid-chart"
+        ref={chartRef} 
+        style={{
+          fontSize: `${width / 250}em`,
+          height: width
+        }}
+      >
       <div className="chart-title">
         <h2>{title}</h2>
       </div>
@@ -219,9 +247,12 @@ export default function CovidChart({title, data, showKey}) {
         <>
         <div
           className="tooltip info"
+          ref={tooltipRef}
           style={{
             top: `calc(${40 * yMultiplier}%)`,
-            left: `calc(${tooltipX * 98}% + 2em)`
+            left: flipTooltip
+              ? `calc(${tooltipX * 94}% - ${tooltipWidth}px)`
+              : `calc(${tooltipX * 94}% + 2em)` 
           }}
         >
           <p>{formatDate(tooltipData.date)}:</p>
@@ -266,7 +297,7 @@ export default function CovidChart({title, data, showKey}) {
       </div>
       {showKey ?
       <div className="chart-info">
-        <LegendItem color={caseColor} value="Average Cases" />
+        <LegendItem color={caseColor} value="Est. Active Cases" />
         <LegendItem color={deathColor} value="Average Deaths" />
         <LegendItem color={partVaccColor} value="Partially Vaccinated" />
         <LegendItem color={fullVaccColor} value="Fully Vaccinated" />
